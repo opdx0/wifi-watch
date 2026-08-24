@@ -145,7 +145,9 @@ view (e.g. to see the pending device at a glance without opening the
 device page), this repo ships one.
 
 1. **Settings → Dashboards → Add Dashboard → New dashboard from scratch.**
-   Give it a title (e.g. "Wi-Fi Approval") and create it.
+   Give it a title (e.g. "Wi-Fi Approval") and an icon (e.g. `mdi:wifi-check`)
+   — this dialog is the only place those are set, they're not part of the
+   pasted YAML below — then create it.
 2. Open the new dashboard, click the pencil (**Edit Dashboard**) icon, then
    the **⋮** menu → **Raw configuration editor**.
 3. Delete the placeholder content, paste in the YAML below, and **Save**.
@@ -166,10 +168,10 @@ views:
         ## Pending WiFi client ({{ states('sensor.wi_fi_watch_pending_approvals') }} total)
 
 
-        **Name:** {{ p.name }}
+        **Name:** {{ p.get('name') }}
 
 
-        MAC: {{ p.mac }}{{ ' [randomized/private MAC]' if p.randomized else '' }}<br>Vendor: {{ p.vendor or 'unknown' }}<br>SSID: {{ p.ssid or 'unknown' }}<br>IP: {{ p.ip }}{{ '<br>BLOCKED' if p.blocked else '' }}
+        MAC: {{ p.get('mac') }}{{ ' [randomized/private MAC]' if p.get('randomized') else '' }}<br>Vendor: {{ p.get('vendor') or 'unknown' }}<br>SSID: {{ p.get('ssid') or 'unknown' }}<br>IP: {{ p.get('ip') }}{{ '<br>BLOCKED' if p.get('blocked') else '' }}
   - type: conditional
     conditions:
     - entity: sensor.wi_fi_watch_pending_approvals
