@@ -154,6 +154,21 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
 
         for tok in self._state["tokens"].values():
             if tok["mac"] == mac and not tok["consumed"]:
+                # Blocking and notifying are decoupled here on purpose: a
+                # reconnect while a decision is still open shouldn't nag
+                # with a second push, but if auto_block gets turned on
+                # while a device's prompt is sitting unanswered, it should
+                # still start blocking on the very next reconnect instead
+                # of waiting for the original token to expire (up to 24h)
+                # before a fresh detection re-evaluates auto_block at all.
+                if self._opt(OPT_AUTO_BLOCK, DEFAULT_AUTO_BLOCK) and not tok.get("blocked"):
+                    try:
+                        tok["blocked"] = await self._unifi.block_client(mac)
+                    except UnifiApiError as err:
+                        _LOGGER.error("retroactive auto-block failed mac=%s: %s", mac, err)
+                    else:
+                        self._save_soon()
+                        self.async_set_updated_data(self._state)
                 _LOGGER.info("suppressing duplicate notify mac=%s - decision already pending", mac)
                 return
 
