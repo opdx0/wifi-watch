@@ -144,13 +144,12 @@ need a dashboard for wifi-watch to work. If you'd rather have a dedicated
 view (e.g. to see the pending device at a glance without opening the
 device page), this repo ships one.
 
-1. **Settings → Dashboards → Add Dashboard → New dashboard from scratch.**
-   Give it a title (e.g. "Wi-Fi Approval") and create it.
-2. Back on the **Settings → Dashboards** list, click the pencil next to
-   your new dashboard's row (or its ⋮ menu → **Edit**) to set its **Icon**
-   (e.g. `mdi:wifi-check`) — this is separate from the dashboard's content
-   and isn't part of the pasted YAML below.
-3. Open the dashboard, click the pencil (**Edit Dashboard**) icon, then
+1. **Settings → Dashboards → Add Dashboard**, then click the **New
+   dashboard from scratch** card (the `+` tile).
+2. Fill in **Title** (e.g. "Wi-Fi Approval") and **Icon** (e.g.
+   `mdi:wifi-check`) — leave URL at its auto-filled value, **Admin-only**
+   off, and **Add to sidebar** on — then **Create**.
+3. Open the new dashboard, click the pencil (**Edit Dashboard**) icon, then
    the **⋮** menu → **Raw configuration editor**.
 4. Delete the placeholder content, paste in the YAML below, and **Save**.
 
