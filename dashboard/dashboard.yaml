@@ -1,10 +1,10 @@
 # wifi-watch dashboard export
 #
-# Import: Settings -> Dashboards -> Add Dashboard -> "New dashboard from
-# scratch" -> the 3-dot menu -> "Raw configuration editor" -> replace its
-# contents with everything below "views:" (paste the whole file, the
-# leading comment block is fine to include, YAML treats it as comments).
-# Or use the YAML-mode dashboard setup in the main README.
+# Setup: see the "Dashboard (optional)" section of the main README for the
+# YAML-mode configuration.yaml block this file is meant to be loaded with.
+# Alternatively, paste everything below "views:" into a dashboard's Raw
+# configuration editor (Settings -> Dashboards -> Add Dashboard -> New
+# dashboard from scratch -> the 3-dot menu -> Raw configuration editor).
 #
 # Nothing else to install - the entities below (sensors, the two removal
 # dropdowns, the three action buttons) ship with the custom_components/
@@ -52,16 +52,31 @@ views:
         name: Allow + save
         icon: mdi:check-circle
         show_state: false
+        tap_action:
+          action: call-service
+          service: button.press
+          target:
+            entity_id: button.wi_fi_watch_allow_save
       - type: button
         entity: button.wi_fi_watch_approve_once
         name: Approve once
         icon: mdi:check
         show_state: false
+        tap_action:
+          action: call-service
+          service: button.press
+          target:
+            entity_id: button.wi_fi_watch_approve_once
       - type: button
         entity: button.wi_fi_watch_deny
         name: Deny (block)
         icon: mdi:block-helper
         show_state: false
+        tap_action:
+          action: call-service
+          service: button.press
+          target:
+            entity_id: button.wi_fi_watch_deny
   - type: markdown
     content: '### Recent approval history
 

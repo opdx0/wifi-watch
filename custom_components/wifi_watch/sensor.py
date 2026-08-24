@@ -1,6 +1,5 @@
-"""Pending/allowlist/denied entities - the same three the manual dashboard
-(../homeassistant/dashboard.yaml) reads today via REST sensors, now backed
-by the coordinator directly."""
+"""Pending/allowlist/denied/history diagnostic sensors, backed directly by
+the coordinator's in-memory state."""
 from __future__ import annotations
 
 from homeassistant.components.sensor import SensorEntity

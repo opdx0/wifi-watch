@@ -1,8 +1,6 @@
-"""Native select entities for removing a device from the allowlist or the
-denied list. Replaces the old dashboard package's template select entities
-- these ship automatically with the integration via HACS, no YAML package
-required, and show up on the device's own page with zero dashboard setup.
-"""
+"""Select entities for removing a device from the allowlist or the denied
+list - ship with the integration, no dashboard required, and show up on
+the device's own page."""
 from __future__ import annotations
 
 import re

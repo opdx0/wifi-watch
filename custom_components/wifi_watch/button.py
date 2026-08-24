@@ -1,6 +1,4 @@
-"""Native buttons that act on the oldest pending approval. Replaces the old
-dashboard package's "decide" script now that ButtonEntity is a standard
-platform, same as SelectEntity - ships automatically via HACS.
+"""Buttons that act on the oldest pending approval.
 
 Multiple devices can be pending approval at once; these always act on the
 oldest unresolved one. Use the push notification directly for any other
