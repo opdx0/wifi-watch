@@ -1,9 +1,8 @@
 # wifi-watch
 
-A Home Assistant custom integration: get notified the moment an unrecognized
-device joins your WiFi, and approve, approve-once, or block it from an
-actionable notification (within Home Assistant Companion on your phone, or
-Home Assistant itself).
+Get notified when an unrecognized device joins your WiFi, and approve,
+approve-once, or block it from an actionable notification (within Home
+Assistant Companion on your phone, or Home Assistant itself).
 
 ## How it works
 
