@@ -22,6 +22,21 @@
           "unifi_username": "Dedicated account username",
           "unifi_password": "Dedicated account password"
         }
+      },
+      "reconfigure": {
+        "title": "Reconfigure Wi-Fi Watch",
+        "data": {
+          "unifi_host": "Controller host/IP",
+          "unifi_api_key": "Integration API key (read-only)",
+          "unifi_username": "Dedicated account username",
+          "unifi_password": "Dedicated account password"
+        }
+      },
+      "reconfigure_site": {
+        "title": "Choose a UniFi site",
+        "data": {
+          "unifi_site_id": "Site"
+        }
       }
     },
     "error": {
@@ -30,7 +45,9 @@
     },
     "abort": {
       "already_configured": "This controller/site is already configured.",
-      "reauth_successful": "Credentials updated."
+      "reauth_successful": "Credentials updated.",
+      "reconfigure_successful": "Connection settings updated.",
+      "wrong_account": "These credentials point at a different UniFi site than this entry was set up for. Remove and re-add the integration if you meant to switch sites."
     }
   },
   "options": {

@@ -2,8 +2,8 @@
 
 A Home Assistant custom integration: get notified the moment an unrecognized
 device joins your WiFi, and approve, approve-once, or block it from an
-actionable phone notification — no separate daemon, no server to run
-anywhere else. UniFi Network controller + Home Assistant.
+actionable notification (within Home Assistant Companion on your phone, or
+Home Assistant itself).
 
 ## How it works
 
@@ -61,7 +61,7 @@ blocked until you tap Allow or Approve.
 repo's URL as type "Integration" → install "Wi-Fi Watch" → restart Home
 Assistant.
 
-**Manually**, always works: copy the `custom_components/wifi_watch/`
+**Manually**: copy the `custom_components/wifi_watch/`
 directory from this repo into your Home Assistant config's
 `custom_components/` directory, then restart Home Assistant.
 

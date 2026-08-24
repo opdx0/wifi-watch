@@ -105,6 +105,10 @@ class WifiWatchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._sites: list[dict] = []
         self._legacy_names: dict[str, str] = {}
+        # Set by async_step_reconfigure - lets the shared _pick_site() tail
+        # know whether to create a new entry or update/reload the existing
+        # one being reconfigured.
+        self._reconfigure = False
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         errors: dict[str, str] = {}
@@ -145,15 +149,22 @@ class WifiWatchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def _pick_site(self, site_id: str, site_name: str, errors: dict[str, str] | None = None) -> FlowResult:
         errors = errors if errors is not None else {}
         await self.async_set_unique_id(f"{self._data[CONF_UNIFI_HOST]}_{site_id}")
-        self._abort_if_unique_id_configured()
+        if self._reconfigure:
+            # Allows the host/API key/account to change during reconfigure,
+            # but not to silently repoint this entry at a different site -
+            # that's a new controller/site, not an update to this one.
+            self._abort_if_unique_id_mismatch(reason="wrong_account")
+        else:
+            self._abort_if_unique_id_configured()
         try:
             await _validate_site(self.hass, self._data, site_id, site_name)
         except UnifiApiError as err:
             _LOGGER.error("site validation failed: %s", err)
             errors["base"] = "cannot_connect"
             if len(self._sites) > 1:
-                return await self.async_step_site()
-            return self.async_show_form(step_id="user", data_schema=STEP_USER_SCHEMA, errors=errors)
+                return await (self.async_step_reconfigure_site() if self._reconfigure else self.async_step_site())
+            step_id = "reconfigure" if self._reconfigure else "user"
+            return self.async_show_form(step_id=step_id, data_schema=STEP_USER_SCHEMA, errors=errors)
 
         self._data[CONF_UNIFI_SITE_ID] = site_id
         self._data[CONF_UNIFI_SITE_NAME] = site_name
@@ -161,7 +172,53 @@ class WifiWatchConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # __init__.py's _notify_targets) - persistent_notification plus
         # every paired phone's mobile_app_* service, broadcast to all of
         # them by default. Nothing to ask for here.
+        if self._reconfigure:
+            return self.async_update_reload_and_abort(self._get_reconfigure_entry(), data=self._data)
         return self.async_create_entry(title=f"Wi-Fi Watch ({self._data[CONF_UNIFI_HOST]})", data=self._data)
+
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        """Lets an existing entry's connection settings (host/API key/
+        dedicated account) be edited any time from Settings -> Devices &
+        Services -> Wi-Fi Watch -> Reconfigure, not just after an auth
+        failure (that's async_step_reauth_confirm, which only covers the
+        password)."""
+        self._reconfigure = True
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            try:
+                sites, legacy_names = await _validate_credentials(self.hass, user_input)
+            except UnifiApiError as err:
+                _LOGGER.error("reconfigure validation failed: %s", err)
+                errors["base"] = "cannot_connect"
+            else:
+                self._data = dict(user_input)
+                self._sites = sites
+                self._legacy_names = legacy_names
+                if len(sites) == 1:
+                    site_id = sites[0].get("id", "")
+                    return await self._pick_site(site_id, self._legacy_names.get(site_id, DEFAULT_UNIFI_SITE_NAME))
+                if len(sites) > 1:
+                    return await self.async_step_reconfigure_site()
+                errors["base"] = "no_sites"
+
+        reconfigure_entry = self._get_reconfigure_entry()
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=self.add_suggested_values_to_schema(STEP_USER_SCHEMA, reconfigure_entry.data),
+            errors=errors,
+        )
+
+    async def async_step_reconfigure_site(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+        errors: dict[str, str] = {}
+        options = {s.get("id", ""): s.get("name") or s.get("id", "") for s in self._sites}
+        schema = vol.Schema({vol.Required(CONF_UNIFI_SITE_ID): vol.In(options)})
+
+        if user_input is not None:
+            site_id = user_input[CONF_UNIFI_SITE_ID]
+            site_name = self._legacy_names.get(site_id, DEFAULT_UNIFI_SITE_NAME)
+            return await self._pick_site(site_id, site_name, errors)
+
+        return self.async_show_form(step_id="reconfigure_site", data_schema=schema, errors=errors)
 
     async def async_step_reauth(self, entry_data: dict[str, Any]) -> FlowResult:
         return await self.async_step_reauth_confirm()
