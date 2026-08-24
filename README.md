@@ -145,12 +145,14 @@ view (e.g. to see the pending device at a glance without opening the
 device page), this repo ships one.
 
 1. **Settings → Dashboards → Add Dashboard → New dashboard from scratch.**
-   Give it a title (e.g. "Wi-Fi Approval") and an icon (e.g. `mdi:wifi-check`)
-   — this dialog is the only place those are set, they're not part of the
-   pasted YAML below — then create it.
-2. Open the new dashboard, click the pencil (**Edit Dashboard**) icon, then
+   Give it a title (e.g. "Wi-Fi Approval") and create it.
+2. Back on the **Settings → Dashboards** list, click the pencil next to
+   your new dashboard's row (or its ⋮ menu → **Edit**) to set its **Icon**
+   (e.g. `mdi:wifi-check`) — this is separate from the dashboard's content
+   and isn't part of the pasted YAML below.
+3. Open the dashboard, click the pencil (**Edit Dashboard**) icon, then
    the **⋮** menu → **Raw configuration editor**.
-3. Delete the placeholder content, paste in the YAML below, and **Save**.
+4. Delete the placeholder content, paste in the YAML below, and **Save**.
 
 ```yaml
 views:
