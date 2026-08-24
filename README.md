@@ -8,8 +8,7 @@ Assistant Companion on your phone, or Home Assistant itself).
 
 Every few seconds (configurable), the integration polls your UniFi
 controller's wireless client list. A client whose MAC isn't already on your
-allowlist and whose connection session looks new (not just "still seen this
-poll") triggers a push notification with three actions:
+allowlist triggers a push notification with three actions:
 
 - **Allow + save** — adds it to the allowlist permanently; you won't be
   asked about it again.
@@ -28,11 +27,10 @@ blocked until you tap Allow or Approve.
   - An **integration API key** — used for the poll loop that checks for
     new/unrecognized devices every few seconds.
   - A **dedicated local UniFi account** (username + password) — used only
-    for blocking/unblocking and SSID lookups, which are only available
-    through UniFi's legacy cookie-session API, not the official one. Give
-    it **Full Management** under the Network role dropdown (required for
-    blocking/unblocking) and leave the other role categories at **None**
-    — don't reuse your own admin login.
+    for blocking/unblocking and SSID lookups. Give it **Full Management**
+    under the Network role dropdown (required for blocking/unblocking) and
+    leave the other role categories at **None** — don't reuse your own
+    admin login.
 
   To create both:
 
@@ -80,9 +78,8 @@ The config flow is two short steps:
 If setup fails with "couldn't connect," it's almost always the API key or
 the dedicated account's credentials.
 
-Credentials rotate or expire eventually. If they do, Home Assistant will
-surface this integration as needing reauthentication rather than silently
-failing — click through it and re-enter the UniFi account's new password.
+If your UniFi credentials rotate or expire, Home Assistant will prompt you
+to reauthenticate — click through it and re-enter the new password.
 
 ## Notify targets
 
@@ -102,7 +99,7 @@ without removing and re-adding the integration:
 |---|---|---|
 | Notify targets to exclude | none | Opt specific targets out of the broadcast described above |
 | Poll interval | 7s | How often the UniFi client list is checked |
-| Notify debounce | 90s | Suppresses a duplicate notification for the same MAC+SSID within this window — a slow-joining client can otherwise trigger the poll loop's "is this a new session" check more than once for what's really one physical join |
+| Notify debounce | 90s | Suppresses a duplicate notification for the same MAC+SSID within this window |
 | Retention window | 30 days | How long old sessions/denials/notify history are kept before pruning |
 | Approval link expiry | 24h | How long a pending token stays valid before it silently expires |
 | Auto-block new devices | off | See "How it works" above |
