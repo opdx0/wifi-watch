@@ -150,10 +150,6 @@ device page), this repo ships one.
    the **⋮** menu → **Raw configuration editor**.
 3. Delete the placeholder content, paste in the YAML below, and **Save**.
 
-No config-directory access and no restart needed. Since this is pasted
-rather than read from a file, a future update to the YAML below won't
-apply on its own — repeat step 3 if you want a newer version.
-
 ```yaml
 views:
 - title: WiFi Approval
