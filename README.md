@@ -140,14 +140,26 @@ working control surface on its own:
 The push notification alone is a complete approve/deny flow, and every
 entity above already shows up on the integration's own device page
 (Settings → Devices & Services → Wi-Fi Watch → the device) — you don't
-need a dashboard for wifi-watch to work.
+need a dashboard for wifi-watch to work. If you'd rather have a dedicated
+view (e.g. to see the pending device at a glance without opening the
+device page), this repo ships one.
 
-If you'd rather have a dedicated view (e.g. to see the pending device at a
-glance without opening the device page), this repo ships one:
-`dashboard/dashboard.yaml`, loaded straight from the file (not pasted into
-the UI), so future updates to this file take effect on the next restart
-with nothing to redo. Copy the `dashboard/` folder into your config
-directory, then add:
+**1. Find your config directory** — the same folder that already holds
+`configuration.yaml`:
+
+- **Home Assistant OS / Supervised**: install the **File editor** or
+  **Studio Code Server** add-on (Settings → Add-ons → Add-on store) and
+  open it, or connect to the `config` share over Samba/SMB
+  (`\\homeassistant.local\config` on Windows, `smb://homeassistant.local/config`
+  on Mac).
+- **Container / Core install**: the host directory you mounted to
+  `/config` in your `docker run`/compose file.
+
+**2. Add this repo's `dashboard/` folder** to that directory, so you end up
+with `config/dashboard/dashboard.yaml` (via File editor's upload, dragging
+it onto the Samba share, or `scp`/`cp` if you're on the host directly).
+
+**3. Add this block to `configuration.yaml`**, in the same directory:
 ```yaml
 lovelace:
   dashboards:
@@ -158,6 +170,10 @@ lovelace:
       show_in_sidebar: true
       filename: dashboard/dashboard.yaml
 ```
+
+**4. Restart Home Assistant.** "Wi-Fi Approval" appears in the sidebar,
+loaded straight from the file — future updates to `dashboard.yaml` take
+effect on the next restart, nothing to re-paste.
 
 ## Diagnostics
 
