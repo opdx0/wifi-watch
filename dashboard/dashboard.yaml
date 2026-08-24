@@ -1,10 +1,10 @@
 # wifi-watch dashboard export
 #
-# Setup: see the "Dashboard (optional)" section of the main README for the
-# YAML-mode configuration.yaml block this file is meant to be loaded with.
-# Alternatively, paste everything below "views:" into a dashboard's Raw
-# configuration editor (Settings -> Dashboards -> Add Dashboard -> New
-# dashboard from scratch -> the 3-dot menu -> Raw configuration editor).
+# Setup: Settings -> Dashboards -> Add Dashboard -> New dashboard from
+# scratch -> give it a title -> open it -> Edit Dashboard (pencil icon) ->
+# the 3-dot menu -> Raw configuration editor -> delete the placeholder
+# content, paste in everything below "views:", Save. See the "Dashboard
+# (optional)" section of the main README for more detail.
 #
 # Nothing else to install - the entities below (sensors, the two removal
 # dropdowns, the three action buttons) ship with the custom_components/

@@ -144,36 +144,18 @@ need a dashboard for wifi-watch to work. If you'd rather have a dedicated
 view (e.g. to see the pending device at a glance without opening the
 device page), this repo ships one.
 
-**1. Find your config directory** — the same folder that already holds
-`configuration.yaml`:
+1. **Settings → Dashboards → Add Dashboard → New dashboard from scratch.**
+   Give it a title (e.g. "Wi-Fi Approval") and create it.
+2. Open the new dashboard, click the pencil (**Edit Dashboard**) icon, then
+   the **⋮** menu → **Raw configuration editor**.
+3. Delete the placeholder content, paste in everything below `views:` from
+   this repo's [`dashboard/dashboard.yaml`](dashboard/dashboard.yaml), and
+   **Save**.
 
-- **Home Assistant OS / Supervised**: install the **File editor** or
-  **Studio Code Server** add-on (Settings → Add-ons → Add-on store) and
-  open it, or connect to the `config` share over Samba/SMB
-  (`\\homeassistant.local\config` on Windows, `smb://homeassistant.local/config`
-  on Mac).
-- **Container / Core install**: the host directory you mounted to
-  `/config` in your `docker run`/compose file.
-
-**2. Add this repo's `dashboard/` folder** to that directory, so you end up
-with `config/dashboard/dashboard.yaml` (via File editor's upload, dragging
-it onto the Samba share, or `scp`/`cp` if you're on the host directly).
-
-**3. Add this block to `configuration.yaml`**, in the same directory:
-```yaml
-lovelace:
-  dashboards:
-    wifi-watch:
-      mode: yaml
-      title: Wi-Fi Approval
-      icon: mdi:wifi-check
-      show_in_sidebar: true
-      filename: dashboard/dashboard.yaml
-```
-
-**4. Restart Home Assistant.** "Wi-Fi Approval" appears in the sidebar,
-loaded straight from the file — future updates to `dashboard.yaml` take
-effect on the next restart, nothing to re-paste.
+No config-directory access and no restart needed. Since the dashboard is
+pasted rather than read from the file, a future update to `dashboard.yaml`
+won't apply on its own — repeat step 3 with the newer version if you want
+it.
 
 ## Diagnostics
 
@@ -185,12 +167,11 @@ automatically.
 
 - **Integration**: Settings → Devices & Services → Wi-Fi Watch → ⋮ →
   Delete — also deletes its stored state (allowlist, denials, history).
-- **Dashboard** (if installed): remove the `lovelace: dashboards:` block
-  from `configuration.yaml` and delete the `dashboard/` folder from your
-  config.
+- **Dashboard** (if added): Settings → Dashboards → open "Wi-Fi Approval"
+  (or whatever you titled it) → ⋮ → **Delete Dashboard**.
 
-The dashboard is your own `configuration.yaml` entry, not something the
-integration owns — deleting the integration alone won't remove it.
+The dashboard is your own dashboard, not something the integration owns —
+deleting the integration alone won't remove it.
 
 ## External reachability
 
