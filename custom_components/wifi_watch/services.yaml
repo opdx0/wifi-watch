@@ -1,0 +1,53 @@
+allowlist_remove:
+  name: Remove from allowlist
+  description: >-
+    Removes a MAC from the allowlist and clears its session state, so it
+    gets a fresh approval prompt the next time it reconnects.
+  fields:
+    mac:
+      required: true
+      example: "4c:49:6c:e8:f7:0b"
+      selector:
+        text:
+
+denied_remove:
+  name: Remove from blocked list
+  description: >-
+    Unblocks a currently-blocked device. Optionally also allowlists it
+    ("I denied that by accident") - otherwise it's treated as unknown again.
+  fields:
+    mac:
+      required: true
+      example: "4c:49:6c:e8:f7:0b"
+      selector:
+        text:
+    allowlist:
+      required: false
+      default: false
+      selector:
+        boolean:
+
+test_notification:
+  name: Send test notification
+  description: Sends a plain test push to every notify target (persistent_notification and every paired phone), to confirm delivery works.
+
+decide:
+  name: Decide on a pending device
+  description: >-
+    Allow, approve-once, or deny a pending device by its approval token -
+    the same action a notification button triggers. Use with the
+    pending_approvals sensor's tokens attribute to build dashboard buttons.
+  fields:
+    token:
+      required: true
+      example: "AbCdEf123..."
+      selector:
+        text:
+    action:
+      required: true
+      selector:
+        select:
+          options:
+            - allow
+            - approve
+            - deny

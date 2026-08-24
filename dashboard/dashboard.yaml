@@ -1,0 +1,88 @@
+# wifi-watch dashboard export
+#
+# Import: Settings -> Dashboards -> Add Dashboard -> "New dashboard from
+# scratch" -> the 3-dot menu -> "Raw configuration editor" -> replace its
+# contents with everything below "views:" (paste the whole file, the
+# leading comment block is fine to include, YAML treats it as comments).
+# Or use the YAML-mode dashboard setup in the main README.
+#
+# Nothing else to install - the entities below (sensors, the two removal
+# dropdowns, the three action buttons) ship with the custom_components/
+# wifi_watch integration itself. Just make sure it's set up first.
+#
+# The push notification remains the primary way to act on a new device -
+# this dashboard is a secondary/backup UI, and its buttons act on the
+# oldest pending device if more than one is waiting at once.
+
+views:
+- title: WiFi Approval
+  path: '0'
+  cards:
+  - type: conditional
+    conditions:
+    - entity: sensor.wi_fi_watch_pending_approvals
+      state_not: '0'
+    card:
+      type: markdown
+      content: >-
+        {% set p = (state_attr('sensor.wi_fi_watch_pending_approvals', 'pending') or [{}])[0] %}
+        ## Pending WiFi client ({{ states('sensor.wi_fi_watch_pending_approvals') }} total)
+
+
+        **Name:** {{ p.name }}
+
+
+        MAC: {{ p.mac }}{{ ' [randomized/private MAC]' if p.randomized else '' }}<br>Vendor: {{ p.vendor or 'unknown' }}<br>SSID: {{ p.ssid or 'unknown' }}<br>IP: {{ p.ip }}{{ '<br>BLOCKED' if p.blocked else '' }}
+  - type: conditional
+    conditions:
+    - entity: sensor.wi_fi_watch_pending_approvals
+      state: '0'
+    card:
+      type: markdown
+      content: '## ✅ No pending requests'
+  - type: conditional
+    conditions:
+    - entity: sensor.wi_fi_watch_pending_approvals
+      state_not: '0'
+    card:
+      type: horizontal-stack
+      cards:
+      - type: button
+        entity: button.wi_fi_watch_allow_save
+        name: Allow + save
+        icon: mdi:check-circle
+        show_state: false
+      - type: button
+        entity: button.wi_fi_watch_approve_once
+        name: Approve once
+        icon: mdi:check
+        show_state: false
+      - type: button
+        entity: button.wi_fi_watch_deny
+        name: Deny (block)
+        icon: mdi:block-helper
+        show_state: false
+  - type: markdown
+    content: '### Recent approval history
+
+      {% for h in state_attr(''sensor.wi_fi_watch_recent_activity'', ''history'') or [] %}- **{{ h.name
+      }}** ({{ h.mac }}) - {{ h.action }} - {% set diff = ((as_timestamp(now()) - h.time) | round(0) |
+      int) %}{% if diff < 60 %}{{ diff }}s{% elif diff < 3600 %}{{ (diff // 60) }}m {{ (diff % 60) }}s{%
+      else %}{{ (diff // 3600) }}h {{ ((diff % 3600) // 60) }}m {{ (diff % 60) }}s{% endif %} ago
+
+      {% else %}*Nothing yet.*
+
+      {% endfor %}'
+- title: Manage
+  path: manage
+  cards:
+  - type: entities
+    title: Remove From Allowlist
+    show_header_toggle: false
+    entities:
+    - entity: select.wi_fi_watch_remove_from_allowlist
+  - type: entities
+    title: Remove From Currently Blocked
+    show_header_toggle: false
+    entities:
+    - entity: select.wi_fi_watch_remove_from_currently_blocked

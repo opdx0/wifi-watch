@@ -1,0 +1,58 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Connect Wi-Fi Watch to UniFi",
+        "data": {
+          "unifi_host": "Controller host/IP",
+          "unifi_api_key": "Integration API key (read-only)",
+          "unifi_username": "Dedicated account username",
+          "unifi_password": "Dedicated account password"
+        }
+      },
+      "site": {
+        "title": "Choose a UniFi site",
+        "data": {
+          "unifi_site_id": "Site"
+        }
+      },
+      "reauth_confirm": {
+        "title": "Re-enter Wi-Fi Watch's UniFi credentials",
+        "data": {
+          "unifi_username": "Dedicated account username",
+          "unifi_password": "Dedicated account password"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Couldn't connect with those credentials. Check the host, API key, and dedicated account login.",
+      "no_sites": "This UniFi account/API key has no sites available."
+    },
+    "abort": {
+      "already_configured": "This controller/site is already configured.",
+      "reauth_successful": "Credentials updated."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "data": {
+          "excluded_notify_targets": "Notify targets to exclude",
+          "poll_interval_seconds": "Poll interval (seconds)",
+          "notify_debounce_seconds": "Notify debounce (seconds)",
+          "retention_window_seconds": "Retention window (seconds)",
+          "token_expire_seconds": "Approval link expiry (seconds)",
+          "auto_block": "Auto-block new devices on detection"
+        },
+        "data_description": {
+          "excluded_notify_targets": "Every device below gets notified by default. Check any you want to silence - unpairing a phone removes it from this list automatically, no need to check it first.",
+          "poll_interval_seconds": "How often the UniFi client list is checked.",
+          "notify_debounce_seconds": "Minimum time between repeat alerts for the same device.",
+          "retention_window_seconds": "How long history, denials, and notify records are kept.",
+          "token_expire_seconds": "How long an approval link stays valid before it expires.",
+          "auto_block": "Block a new device immediately instead of just notifying."
+        }
+      }
+    }
+  }
+}
