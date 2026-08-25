@@ -27,11 +27,15 @@ class UnifiApiError(Exception):
 
 
 class UnifiDegradedResponseError(UnifiApiError):
-    """The controller answered with valid-looking JSON but an incomplete
-    client list - seen for real during a controller's post-reboot recovery
-    window, where every client's connectedAt had just changed (fresh
-    re-association), which would otherwise produce false "new client"
-    notifications for already-known, already-allowlisted devices."""
+    """The controller answered with valid-looking JSON but a genuinely
+    untrustworthy client list - a paginated/truncated response (count !=
+    totalCount, seen for real during a controller's post-reboot recovery
+    window, where every client's connectedAt had just changed) or a
+    record missing its MAC entirely. Does NOT cover a missing ipAddress
+    on an otherwise-valid record - that's routine on networks where a
+    third-party DHCP server (not UniFi itself) hands out leases, and
+    ipAddress is only ever used for notification/history display
+    (coordinator.py falls back to "?"), never for detection logic."""
 
 
 class UnifiAuthError(UnifiApiError):
@@ -133,10 +137,8 @@ class UnifiClient:
 
         clients = [c for c in data["data"] if c.get("type") == "WIRELESS"]
         for c in clients:
-            if not c.get("macAddress") or not c.get("ipAddress"):
-                raise UnifiDegradedResponseError(
-                    f"incomplete client record in response: {c.get('macAddress')!r} ip={c.get('ipAddress')!r}"
-                )
+            if not c.get("macAddress"):
+                raise UnifiDegradedResponseError(f"client record missing macAddress: {c!r}")
         return clients
 
     async def validate_legacy_login(self) -> None:
