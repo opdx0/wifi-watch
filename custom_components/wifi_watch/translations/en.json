@@ -50,6 +50,12 @@
       "wrong_account": "These credentials point at a different UniFi site than this entry was set up for. Remove and re-add the integration if you meant to switch sites."
     }
   },
+  "issues": {
+    "update_failing": {
+      "title": "Wi-Fi Watch can't reach UniFi",
+      "description": "Wi-Fi Watch has been unable to fetch the client list from your UniFi controller for over a minute, so new devices aren't being detected. Last error: {error}\n\nCheck that the controller is reachable and the dedicated account's credentials are still valid, then this will clear on its own once polling succeeds again."
+    }
+  },
   "options": {
     "step": {
       "init": {

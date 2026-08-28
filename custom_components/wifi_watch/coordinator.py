@@ -12,6 +12,7 @@ import time
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryAuthFailed
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.storage import Store
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -34,6 +35,12 @@ from .unifi_api import UnifiApiError, UnifiAuthError, UnifiClient
 
 _LOGGER = logging.getLogger(__name__)
 
+# How long update failures must persist before surfacing a Repairs issue -
+# well above one bad poll (default poll interval is 7s, a single UniFi
+# hiccup shouldn't page anyone), but well below the "several minutes of
+# silent unavailability" that happened for real before this existed.
+UPDATE_FAILING_THRESHOLD_SECONDS = 60
+
 
 def _default_state() -> dict:
     return {
@@ -55,6 +62,8 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         self._store: Store[dict] = Store(hass, STORAGE_VERSION, f"wifi_watch_{entry.entry_id}")
         self._state: dict = _default_state()
         self._first_run = True
+        self._failing_since: float | None = None
+        self._issue_id = f"update_failing_{entry.entry_id}"
         super().__init__(
             hass,
             _LOGGER,
@@ -119,7 +128,24 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         except UnifiAuthError as err:
             raise ConfigEntryAuthFailed(str(err)) from err
         except UnifiApiError as err:
+            now = time.time()
+            if self._failing_since is None:
+                self._failing_since = now
+            elif now - self._failing_since >= UPDATE_FAILING_THRESHOLD_SECONDS:
+                ir.async_create_issue(
+                    self.hass,
+                    DOMAIN,
+                    self._issue_id,
+                    is_fixable=False,
+                    severity=ir.IssueSeverity.WARNING,
+                    translation_key="update_failing",
+                    translation_placeholders={"error": str(err)},
+                )
             raise UpdateFailed(str(err)) from err
+
+        if self._failing_since is not None:
+            ir.async_delete_issue(self.hass, DOMAIN, self._issue_id)
+            self._failing_since = None
 
         now = time.time()
         allowlist = self._state["allowlist"]
