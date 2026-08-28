@@ -69,13 +69,39 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         """Load persisted state before the first poll. Guarantees every
         top-level key from _default_state() is present even if the stored
         data predates that key, so adding a new field later can't KeyError.
-        Does NOT deep-merge nested structure, only top-level keys."""
+        Does NOT deep-merge nested structure, only top-level keys.
+
+        allowlist entries are additionally normalized here to the current
+        {"name", "first_seen", "last_seen"} dict shape - older storage (pre
+        first/last-seen tracking) has plain "mac: name" strings, and this is
+        the one place that needs to know that, so every other read site can
+        assume dict shape unconditionally."""
         stored = await self._store.async_load() or {}
         merged = _default_state()
         for key in merged:
             if key in stored:
                 merged[key] = stored[key]
+        merged["allowlist"] = {
+            mac: (v if isinstance(v, dict) else {"name": v, "first_seen": None, "last_seen": None})
+            for mac, v in merged["allowlist"].items()
+        }
         self._state = merged
+
+        needs_backfill = [mac for mac, v in merged["allowlist"].items() if v.get("first_seen") is None]
+        if needs_backfill:
+            # One-time per device, not per poll - stat/alluser is a legacy
+            # call, only worth paying for once to fill in history for
+            # devices allowlisted before first_seen tracking existed.
+            try:
+                first_seen_by_mac = await self._unifi.get_first_seen_by_mac()
+            except UnifiApiError as err:
+                _LOGGER.warning("first_seen backfill skipped, will retry next restart: %s", err)
+            else:
+                for mac in needs_backfill:
+                    fs = first_seen_by_mac.get(mac)
+                    if fs is not None:
+                        merged["allowlist"][mac]["first_seen"] = fs
+                self._save_soon()
         self._first_run = merged["last_poll_epoch"] is None
 
         from datetime import timedelta
@@ -101,7 +127,15 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
 
         for c in wireless:
             mac = c.get("macAddress", "").lower()
-            if not mac or mac in allowlist:
+            if not mac:
+                continue
+            if mac in allowlist:
+                # Update from every poll where an allowlisted device is
+                # actually seen - this is the cheap, zero-extra-API-call
+                # source for last_seen (see get_wireless_clients: already
+                # fetched every cycle). Must happen before the rest of this
+                # loop, which is only for MACs not yet on the allowlist.
+                allowlist[mac]["last_seen"] = now
                 continue
             connected_at = c.get("connectedAt")
             if not connected_at:
@@ -116,7 +150,7 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
                 # otherwise every one of these devices would look genuinely
                 # new the first time it reconnects (WiFi toggle, sleep/wake).
                 seen_connections[mac] = {"connected_epoch": connected_epoch, "last_seen": now}
-                allowlist[mac] = c.get("name") or "(unnamed)"
+                allowlist[mac] = {"name": c.get("name") or "(unnamed)", "first_seen": None, "last_seen": now}
                 continue
 
             if not logic.is_new_session(seen_connections, mac, connected_epoch):
@@ -246,7 +280,7 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
                 return
             entry["consumed"] = True
             if action == "allow":
-                self._state["allowlist"][entry["mac"]] = entry["name"]
+                self._state["allowlist"][entry["mac"]] = {"name": entry["name"], "first_seen": None, "last_seen": now}
                 hist_action = "unblocked + allowed" if entry.get("blocked") else "allowed"
                 _LOGGER.info(
                     "ALLOWLISTED mac=%s name=%s unblocked=%s", entry["mac"], entry["name"], entry.get("blocked", False)
@@ -321,7 +355,7 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         meta = self._state["denied"].pop(mac, {})
         name = meta.get("name") or client.get("hostname") or client.get("name") or mac
         if allowlist_after:
-            self._state["allowlist"][mac] = name
+            self._state["allowlist"][mac] = {"name": name, "first_seen": None, "last_seen": now}
             hist_action = "un-denied + allowed"
         else:
             self._state["last_notify"].pop(mac, None)

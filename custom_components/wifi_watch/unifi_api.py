@@ -241,6 +241,18 @@ class UnifiClient:
         data = await self._legacy_request("GET", f"/proxy/network/api/s/{self._site_name}/stat/alluser?within=8760")
         return [c for c in data.get("data", []) if c.get("blocked")]
 
+    async def get_first_seen_by_mac(self) -> dict[str, float]:
+        """One-shot lookup of every client UniFi has ever recorded, for the
+        allowlist first_seen backfill only (see coordinator.async_load) -
+        NOT called on every poll. Reuses stat/alluser, the same endpoint
+        list_blocked() already calls, so this adds no new dependency."""
+        data = await self._legacy_request("GET", f"/proxy/network/api/s/{self._site_name}/stat/alluser?within=8760")
+        return {
+            c["mac"].lower(): c["first_seen"]
+            for c in data.get("data", [])
+            if c.get("mac") and c.get("first_seen")
+        }
+
     async def get_client_essid_and_vendor(self, mac: str) -> tuple[str | None, str | None]:
         """Legacy-API-only lookup (essid isn't in the official v1 API at
         all; vendor is technically on the v1 client record too, but this
