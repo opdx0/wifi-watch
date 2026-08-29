@@ -1,22 +1,23 @@
 # wifi-watch
 
 Get notified when an unrecognized device joins your Wi-Fi, and approve,
-approve-once, or block it from an actionable notification (within Home
-Assistant Companion on your phone, or Home Assistant itself) - or approve
-it for just 24 hours from the dashboard.
+approve-once, approve for 24 hours, or block it from an actionable
+notification (within Home Assistant Companion on your phone, or Home
+Assistant itself).
 
 ## How it works
 
 Every few seconds (configurable), the integration polls your UniFi
 controller's wireless client list. A client whose MAC isn't already on your
-allowlist triggers a push notification with three actions (a fourth,
-**Approve 24h**, is available from the device page or dashboard, not the
-push notification itself - see Entities below):
+allowlist triggers a push notification with four actions:
 
 - **Approve + Save** - adds it to the allowlist permanently; you won't be
   asked about it again.
 - **Approve Once** - lets it on this one time; you'll be asked again next
   time it connects.
+- **Approve 24h** - lets it on for a day, then quietly removes it from the
+  allowlist; see Entities below for what happens if it's still connected
+  when that expires.
 - **Deny (Block)** - blocks the device at the UniFi controller.
 
 If `auto_block` is enabled (off by default), a new device is blocked

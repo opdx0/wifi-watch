@@ -95,6 +95,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             actions = [
                 ("Unblock + Allow", f"{ACTION_PREFIX}ALLOW::{token}"),
                 ("Unblock Once", f"{ACTION_PREFIX}APPROVE::{token}"),
+                ("Unblock 24h", f"{ACTION_PREFIX}GUEST::{token}"),
                 ("Keep Blocked", f"{ACTION_PREFIX}DENY::{token}"),
             ]
         else:
@@ -102,6 +103,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             actions = [
                 ("Approve + Save", f"{ACTION_PREFIX}ALLOW::{token}"),
                 ("Approve Once", f"{ACTION_PREFIX}APPROVE::{token}"),
+                ("Approve 24h", f"{ACTION_PREFIX}GUEST::{token}"),
                 ("Deny (Block)", f"{ACTION_PREFIX}DENY::{token}"),
             ]
         message = f"New Wi-Fi client: {name}\nMAC: {mac}{tag}{vendorline}{ssidline}\nIP: {ip}\n{status}"
@@ -173,7 +175,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         except ValueError:
             _LOGGER.warning("malformed wifi-watch action string: %s", action)
             return
-        verb_map = {"ALLOW": "allow", "APPROVE": "approve", "DENY": "deny"}
+        verb_map = {"ALLOW": "allow", "APPROVE": "approve", "GUEST": "guest", "DENY": "deny"}
         if verb not in verb_map:
             _LOGGER.warning("unknown wifi-watch action verb: %s", verb)
             return
