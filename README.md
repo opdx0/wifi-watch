@@ -22,11 +22,11 @@ If `auto_block` is enabled (off by default), a new device is blocked
 immediately on detection instead of waiting for you to act - it stays
 blocked until you tap Approve or Deny.
 
-If several new devices show up within a couple minutes of each other (a
-phone reboot dragging a watch and a laptop online with it, say), you get
-one combined heads-up instead of a separate push per device - each device
-still gets its own pending entry to review individually, only the
-notification itself is deduplicated.
+A burst of new devices (like a phone, watch, and laptop all reconnecting
+together after a reboot) triggers one combined alert instead of a
+separate push for each - so you're not flooded with notifications. Each
+device still shows up on its own, ready to review and approve or deny
+individually.
 
 If the integration can't reach your UniFi controller for more than a
 minute, a Repairs entry appears under **Settings → System → Repairs** -
