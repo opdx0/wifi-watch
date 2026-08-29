@@ -2,7 +2,8 @@
 
 Get notified when an unrecognized device joins your Wi-Fi, and approve,
 approve-once, or block it from an actionable notification (within Home
-Assistant Companion on your phone, or Home Assistant itself).
+Assistant Companion on your phone, or Home Assistant itself) - or approve
+it for just 24 hours from the dashboard.
 
 ## How it works
 
