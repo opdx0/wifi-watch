@@ -122,7 +122,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 },
             )
 
+    async def _notify_burst(events: list[dict]) -> None:
+        names = ", ".join(e["name"] for e in events)
+        message = (
+            f"{len(events)} new devices joined within {events[-1]['time'] - events[0]['time']:.0f}s: {names}\n"
+            "Review and approve/deny each one in Wi-Fi Watch (the Pending Device selector, "
+            "or each device's own sensors) - no single-tap action here since there's more than one."
+        )
+        for target in _notify_targets(hass, entry):
+            await hass.services.async_call(
+                "notify",
+                target,
+                {"title": "⚠️ Wi-Fi Watch: burst of new devices", "message": message, "data": {"push": {"sound": "default"}}},
+            )
+
     coordinator.async_notify_new_client = _notify
+    coordinator.async_notify_burst = _notify_burst
 
     await coordinator.async_load()
     await coordinator.async_config_entry_first_refresh()

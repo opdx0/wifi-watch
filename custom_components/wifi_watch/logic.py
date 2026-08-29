@@ -67,6 +67,14 @@ def prune_flat_by_age(entries: dict, now: float, retention_seconds: float) -> di
     return {k: t for k, t in entries.items() if now - t < retention_seconds}
 
 
+def prune_list_by_age(entries: list[dict], now: float, window_seconds: float, age_key: str) -> list[dict]:
+    """Same idea as prune_by_age, for a list of dicts rather than a dict
+    keyed by id - state["recent_new_client_events"]'s shape (burst-window
+    tracking, where several events for the same mac within the window are
+    all kept, unlike every other pruned collection here)."""
+    return [e for e in entries if now - e.get(age_key, 0) < window_seconds]
+
+
 def record_history(history: list, mac: str, name: str, action: str, now: float, max_entries: int = 20) -> list:
     history = [{"mac": mac, "name": name, "action": action, "time": now}, *history]
     return history[:max_entries]

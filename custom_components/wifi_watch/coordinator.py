@@ -46,6 +46,14 @@ UPDATE_FAILING_THRESHOLD_SECONDS = 60
 # or a permanent Allow + Save instead.
 GUEST_TRUST_SECONDS = 24 * 60 * 60
 
+# 3+ distinct new devices inside 2 minutes reads as a burst (a phone that
+# reboots and drags a watch + a laptop online with it, someone's whole
+# household of gear coming up after a power cut) rather than routine
+# one-at-a-time onboarding - worth one combined heads-up instead of N
+# identical pushes in a row.
+BURST_WINDOW_SECONDS = 120
+BURST_THRESHOLD = 3
+
 
 def _default_state() -> dict:
     return {
@@ -57,6 +65,7 @@ def _default_state() -> dict:
         "seen_connections": {},
         "last_notify": {},
         "last_poll_epoch": None,
+        "recent_new_client_events": [],
     }
 
 
@@ -73,6 +82,10 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         # the three decide buttons at - UI-only, deliberately not part of
         # self._state (not persisted, not pruned/saved to disk).
         self._selected_pending_mac: str | None = None
+        # Whether the current burst window already got its one combined
+        # alert - reset once recent_new_client_events drops back under
+        # BURST_THRESHOLD (see _async_update_data's pruning pass).
+        self._burst_active = False
         super().__init__(
             hass,
             _LOGGER,
@@ -225,6 +238,13 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         self._state["denied"] = logic.prune_by_age(self._state["denied"], now, retention, "time")
         self._state["seen_connections"] = logic.prune_by_age(seen_connections, now, retention, "last_seen")
         self._state["last_notify"] = logic.prune_by_age(self._state["last_notify"], now, retention, "time")
+        self._state["recent_new_client_events"] = logic.prune_list_by_age(
+            self._state["recent_new_client_events"], now, BURST_WINDOW_SECONDS, "time"
+        )
+        if len(self._state["recent_new_client_events"]) < BURST_THRESHOLD:
+            # Window's cooled off - re-arm so a future burst gets its own
+            # alert instead of staying silently suppressed forever.
+            self._burst_active = False
         self._save_soon()
 
         return self._state
@@ -295,6 +315,25 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
             "NEW CLIENT mac=%s name=%s ip=%s ssid=%s vendor=%s randomized=%s blocked=%s",
             mac, name, ip, ssid, vendor, randomized, blocked_ok,
         )
+
+        self._state["recent_new_client_events"] = logic.prune_list_by_age(
+            self._state["recent_new_client_events"], now, BURST_WINDOW_SECONDS, "time"
+        )
+        self._state["recent_new_client_events"].append({"mac": mac, "name": name, "time": now})
+
+        if len(self._state["recent_new_client_events"]) >= BURST_THRESHOLD:
+            if not self._burst_active:
+                self._burst_active = True
+                _LOGGER.info(
+                    "BURST detected: %d new devices within %ds",
+                    len(self._state["recent_new_client_events"]), BURST_WINDOW_SECONDS,
+                )
+                await self.async_notify_burst(list(self._state["recent_new_client_events"]))
+            # Already alerted for this burst - every device still gets its
+            # token/history/block above, just not its own push, so nothing
+            # is silently missed, only the notification is deduplicated.
+            return
+
         await self.async_notify_new_client(name, mac, ip, ssid, vendor, randomized, auto_block, blocked_ok, token)
 
     async def async_notify_new_client(
@@ -303,6 +342,15 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         """Sends the actionable push. Overridden by __init__.py's wiring to
         the real notify.* service call - kept as a coordinator method (not
         inlined) so it's the one seam a test can stub out."""
+        raise NotImplementedError  # replaced by __init__.py at setup
+
+    async def async_notify_burst(self, events: list[dict]) -> None:
+        """Sends one combined, non-actionable heads-up for a burst of new
+        devices instead of one push per device - overridden by __init__.py,
+        same seam pattern as async_notify_new_client above. Every device in
+        the burst still gets its own token/history entry and shows up on
+        the Pending Device select; this just replaces the flood of
+        individual pushes with one."""
         raise NotImplementedError  # replaced by __init__.py at setup
 
     def _pending_tokens(self) -> dict[str, dict]:
