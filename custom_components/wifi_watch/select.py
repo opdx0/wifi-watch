@@ -1,9 +1,11 @@
 """Select entities for removing a device from the allowlist or the denied
-list - ship with the integration, no dashboard required, and show up on
-the device's own page."""
+list, and for targeting the decide buttons at a specific pending device
+when more than one is waiting at once - ship with the integration, no
+dashboard required, and show up on the device's own page."""
 from __future__ import annotations
 
 import re
+import time
 
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
@@ -32,6 +34,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
         [
             WifiWatchAllowlistSelect(coordinator, entry),
             WifiWatchDeniedSelect(coordinator, entry),
+            WifiWatchPendingSelect(coordinator, entry),
         ]
     )
 
@@ -90,3 +93,48 @@ class WifiWatchDeniedSelect(_RemoveSelect):
 
     async def _remove(self, mac: str) -> None:
         await self.coordinator.async_denied_remove(mac, False)
+
+
+PENDING_PLACEHOLDER = "(none selected - buttons act on oldest)"
+
+
+class WifiWatchPendingSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEntity):
+    """Points the three decide buttons (Allow+Save/Approve Once/Deny) at a
+    specific pending device when more than one is waiting - unlike the
+    remove-selects above, this one is sticky: picking an option stays
+    selected until a button consumes it, it expires, or it's no longer
+    pending, at which point it silently reverts to the placeholder and the
+    buttons resume acting on the oldest pending device (unchanged default
+    behavior)."""
+
+    _attr_has_entity_name = True
+
+    def __init__(self, coordinator, entry: ConfigEntry):
+        super().__init__(coordinator)
+        self._attr_name = "Pending Device"
+        self._attr_unique_id = f"{entry.entry_id}_pending_selection"
+        self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+
+    def _pending(self) -> dict:
+        now = time.time()
+        tokens = self.coordinator.data.get("tokens", {})
+        return {t: v for t, v in tokens.items() if not v.get("consumed") and v["expires"] > now}
+
+    @property
+    def options(self) -> list[str]:
+        labels = sorted((_label(v["name"], v["mac"]) for v in self._pending().values()), key=str.casefold)
+        return [PENDING_PLACEHOLDER] + labels
+
+    @property
+    def current_option(self) -> str:
+        token = self.coordinator.selected_pending_token()
+        if token is None:
+            return PENDING_PLACEHOLDER
+        return _label(self.coordinator.data["tokens"][token]["name"], self.coordinator.data["tokens"][token]["mac"])
+
+    async def async_select_option(self, option: str) -> None:
+        if option == PENDING_PLACEHOLDER:
+            await self.coordinator.async_set_selected_pending(None)
+            return
+        mac = option.rsplit(" — ", 1)[-1]
+        await self.coordinator.async_set_selected_pending(mac)

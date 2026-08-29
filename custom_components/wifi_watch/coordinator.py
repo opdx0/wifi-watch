@@ -64,6 +64,10 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         self._first_run = True
         self._failing_since: float | None = None
         self._issue_id = f"update_failing_{entry.entry_id}"
+        # Which pending device the "Pending Device" select currently points
+        # the three decide buttons at - UI-only, deliberately not part of
+        # self._state (not persisted, not pruned/saved to disk).
+        self._selected_pending_mac: str | None = None
         super().__init__(
             hass,
             _LOGGER,
@@ -282,6 +286,27 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         inlined) so it's the one seam a test can stub out."""
         raise NotImplementedError  # replaced by __init__.py at setup
 
+    def _pending_tokens(self) -> dict[str, dict]:
+        now = time.time()
+        return {t: v for t, v in self._state["tokens"].items() if not v.get("consumed") and v["expires"] > now}
+
+    def selected_pending_token(self) -> str | None:
+        """Token for whichever device the "Pending Device" select currently
+        points at, or None if nothing's selected / the selection is stale
+        (already decided, expired, or reconnected under a new token) - the
+        buttons fall back to oldest-pending in that case, same as before
+        this select existed."""
+        if self._selected_pending_mac is None:
+            return None
+        for t, v in self._pending_tokens().items():
+            if v["mac"] == self._selected_pending_mac:
+                return t
+        return None
+
+    async def async_set_selected_pending(self, mac: str | None) -> None:
+        self._selected_pending_mac = mac
+        self.async_set_updated_data(self._state)
+
     async def async_handle_action(self, token: str, action: str) -> None:
         """action: "allow" | "approve" | "deny". Mirrors wifi_watch.py's
         /action endpoint handler - only consumes the token once the actual
@@ -335,6 +360,8 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
             _LOGGER.warning("unknown action=%s", action)
             return
 
+        if self._selected_pending_mac == entry["mac"]:
+            self._selected_pending_mac = None
         self._save_soon()
         self.async_set_updated_data(self._state)
 

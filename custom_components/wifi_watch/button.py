@@ -1,9 +1,10 @@
-"""Buttons that act on the oldest pending approval.
+"""Buttons that act on a pending approval.
 
-Multiple devices can be pending approval at once; these always act on the
-oldest unresolved one. Use the push notification directly for any other
-pending device - it's unaffected by these buttons either way.
-"""
+Multiple devices can be pending approval at once. If the "Pending Device"
+select has a device chosen, these act on that one; otherwise they fall back
+to the oldest unresolved one, same as before that select existed. The push
+notification's own actions are unaffected either way - they always carry
+their own specific token."""
 from __future__ import annotations
 
 import time
@@ -51,7 +52,7 @@ class WifiWatchDecideButton(CoordinatorEntity[WifiWatchCoordinator], ButtonEntit
         return min(pending, key=lambda item: item[1]["created"])[0]
 
     async def async_press(self) -> None:
-        token = self._oldest_pending_token()
+        token = self.coordinator.selected_pending_token() or self._oldest_pending_token()
         if token is None:
             return
         await self.coordinator.async_handle_action(token, self._action)
