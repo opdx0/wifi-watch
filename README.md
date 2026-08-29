@@ -122,6 +122,11 @@ One device ("Wi-Fi Watch") with everything needed to act on it, no
 dashboard required — Home Assistant's own auto-generated device page is a
 working control surface on its own:
 
+<img src="docs/screenshots/device-page-controls.jpg" width="600" alt="Wi-Fi Watch device page showing the four decide buttons and the Pending Device/Remove selectors">
+<img src="docs/screenshots/device-page-diagnostic.jpg" width="600" alt="Wi-Fi Watch device page showing the four diagnostic sensors">
+
+*(Sample data above — not a real network.)*
+
 - **Pending Approvals**, **Allowlist**, **Denied**, **Recent Activity** —
   diagnostic sensors, each a count with an attribute listing the actual
   entries (device name, MAC, IP, SSID, vendor, block status, first/last
@@ -286,6 +291,11 @@ views:
     entities:
     - entity: select.wi_fi_watch_remove_from_currently_blocked
 ```
+
+<img src="docs/screenshots/dashboard-main.jpg" width="600" alt="Wi-Fi Watch dashboard showing a pending client and the four decide buttons">
+<img src="docs/screenshots/dashboard-manage.jpg" width="600" alt="Wi-Fi Watch dashboard's Manage tab showing the two removal dropdowns">
+
+*(Sample data above — not a real network.)*
 
 ## Diagnostics
 
