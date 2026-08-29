@@ -118,14 +118,11 @@ without removing and re-adding the integration:
 
 ## Entities
 
-One device ("Wi-Fi Watch") with everything needed to act on it, no
-dashboard required — Home Assistant's own auto-generated device page is a
-working control surface on its own:
+Everything lives on one device page ("Wi-Fi Watch") — buttons to act on a
+device, dropdowns to remove one, and sensors showing what's currently
+allowed, blocked, or waiting:
 
-<img src="docs/screenshots/device-page-controls.jpg" width="600" alt="Wi-Fi Watch device page showing the four decide buttons and the Pending Device/Remove selectors">
-<img src="docs/screenshots/device-page-diagnostic.jpg" width="600" alt="Wi-Fi Watch device page showing the four diagnostic sensors">
-
-*(Sample data above — not a real network.)*
+<img src="docs/screenshots/device-page.jpg" width="700" alt="Wi-Fi Watch device page showing its controls and sensors">
 
 - **Pending Approvals**, **Allowlist**, **Denied**, **Recent Activity** —
   diagnostic sensors, each a count with an attribute listing the actual
@@ -272,7 +269,8 @@ views:
       {% for h in state_attr(''sensor.wi_fi_watch_recent_activity'', ''history'') or [] %}- **{{ h.name
       }}** ({{ h.mac }}) - {{ h.action }} - {% set diff = ((as_timestamp(now()) - h.time) | round(0) |
       int) %}{% if diff < 60 %}{{ diff }}s{% elif diff < 3600 %}{{ (diff // 60) }}m {{ (diff % 60) }}s{%
-      else %}{{ (diff // 3600) }}h {{ ((diff % 3600) // 60) }}m {{ (diff % 60) }}s{% endif %} ago
+      elif diff < 86400 %}{{ (diff // 3600) }}h {{ ((diff % 3600) // 60) }}m {{ (diff % 60) }}s{% else
+      %}{{ (diff // 86400) }}d {{ ((diff % 86400) // 3600) }}h {{ ((diff % 3600) // 60) }}m{% endif %} ago
 
       {% else %}*Nothing yet.*
 
@@ -294,8 +292,6 @@ views:
 
 <img src="docs/screenshots/dashboard-main.jpg" width="600" alt="Wi-Fi Watch dashboard showing a pending client and the four decide buttons">
 <img src="docs/screenshots/dashboard-manage.jpg" width="600" alt="Wi-Fi Watch dashboard's Manage tab showing the two removal dropdowns">
-
-*(Sample data above — not a real network.)*
 
 ## Diagnostics
 
