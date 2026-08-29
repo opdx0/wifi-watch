@@ -41,9 +41,9 @@ _LOGGER = logging.getLogger(__name__)
 # silent unavailability" that happened for real before this existed.
 UPDATE_FAILING_THRESHOLD_SECONDS = 60
 
-# Fixed, not an option - "trust for 24h" is the whole point of guest mode;
-# making it configurable would just be a slower way to reach for auto_block
-# or a permanent Allow + Save instead.
+# Fixed, not an option - approving for exactly 24h is the whole point of
+# guest mode; making it configurable would just be a slower way to reach
+# for auto_block or a permanent Approve + Save instead.
 GUEST_TRUST_SECONDS = 24 * 60 * 60
 
 # 3+ distinct new devices inside 2 minutes reads as a burst (a phone that
@@ -425,7 +425,7 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
             entry["consumed"] = True
             if action == "allow":
                 self._state["allowlist"][entry["mac"]] = {"name": entry["name"], "first_seen": None, "last_seen": now}
-                hist_action = "unblocked + allowed" if entry.get("blocked") else "allowed"
+                hist_action = "unblocked + approved" if entry.get("blocked") else "approved"
                 _LOGGER.info(
                     "ALLOWLISTED mac=%s name=%s unblocked=%s", entry["mac"], entry["name"], entry.get("blocked", False)
                 )
@@ -433,7 +433,7 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
                 self._state["allowlist"][entry["mac"]] = {
                     "name": entry["name"], "first_seen": None, "last_seen": now, "expires": now + GUEST_TRUST_SECONDS,
                 }
-                hist_action = "unblocked + trusted for 24h" if entry.get("blocked") else "trusted for 24h"
+                hist_action = "unblocked + approved for 24h" if entry.get("blocked") else "approved for 24h"
                 _LOGGER.info(
                     "GUEST-TRUSTED mac=%s name=%s unblocked=%s", entry["mac"], entry["name"], entry.get("blocked", False)
                 )

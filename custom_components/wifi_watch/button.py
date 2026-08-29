@@ -24,6 +24,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     async_add_entities(
         [
             WifiWatchDecideButton(coordinator, entry, "allow_save", "allow_save", "Approve + Save", "allow"),
+            # object_id kept as the pre-rename slug ("trust_for_24h_guest",
+            # from this button's old name) - changing it would break every
+            # already-deployed dashboard that references this entity_id.
             WifiWatchDecideButton(coordinator, entry, "trust_24h", "trust_for_24h_guest", "Approve 24h", "guest"),
             WifiWatchDecideButton(coordinator, entry, "approve_once", "approve_once", "Approve Once", "approve"),
             WifiWatchDecideButton(coordinator, entry, "deny", "deny", "Deny (Block)", "deny"),
