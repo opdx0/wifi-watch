@@ -8,7 +8,9 @@ Assistant Companion on your phone, or Home Assistant itself).
 
 Every few seconds (configurable), the integration polls your UniFi
 controller's wireless client list. A client whose MAC isn't already on your
-allowlist triggers a push notification with three actions:
+allowlist triggers a push notification with three actions (a fourth,
+**Trust for 24h**, is available from the device page or dashboard, not the
+push notification itself — see Entities below):
 
 - **Allow + save** — adds it to the allowlist permanently; you won't be
   asked about it again.
@@ -18,7 +20,17 @@ allowlist triggers a push notification with three actions:
 
 If `auto_block` is enabled (off by default), a new device is blocked
 immediately on detection instead of waiting for you to act — it stays
-blocked until you tap Allow or Approve.
+blocked until you tap Allow, Approve, or Trust.
+
+If several new devices show up within a couple minutes of each other (a
+phone reboot dragging a watch and a laptop online with it, say), you get
+one combined heads-up instead of a separate push per device — each device
+still gets its own pending entry to review individually, only the
+notification itself is deduplicated.
+
+If the integration can't reach your UniFi controller for more than a
+minute, a Repairs entry appears under **Settings → System → Repairs** —
+it clears on its own once polling recovers.
 
 ## Requirements
 
@@ -112,9 +124,21 @@ working control surface on its own:
 
 - **Pending Approvals**, **Allowlist**, **Denied**, **Recent Activity** —
   diagnostic sensors, each a count with an attribute listing the actual
-  entries (device name, MAC, IP, SSID, vendor, block status, etc.).
-- **Allow + Save**, **Approve Once**, **Deny** — buttons that act on the
-  oldest pending device, same effect as tapping a notification action.
+  entries (device name, MAC, IP, SSID, vendor, block status, first/last
+  seen, etc.).
+- **Allow + Save**, **Approve Once**, **Trust For 24h (Guest)**, **Deny** —
+  buttons that act on whichever device is picked in Pending Device below,
+  or the oldest pending device if nothing's picked — same effect as
+  tapping a notification action. Trust For 24h allowlists temporarily: the
+  device gets full access for 24 hours, then is quietly removed from the
+  allowlist. If it's still connected when that happens it isn't kicked off
+  mid-session — it just won't be auto-trusted again the next time it
+  actually reconnects, and gets a fresh prompt like any unrecognized
+  device.
+- **Pending Device** — a dropdown listing every currently-pending device by
+  name; pick one to target the four buttons above at it specifically
+  instead of whichever is oldest. Resets to "none selected" automatically
+  once its device is decided, expires, or reconnects under a new session.
 - **Remove From Allowlist**, **Remove From Currently Blocked** — dropdowns
   listing the real allowlist/denied devices as always-current options;
   picking one removes it immediately.
@@ -122,9 +146,9 @@ working control surface on its own:
 ## Services
 
 - `wifi_watch.decide` — act on a pending device by token: `token` +
-  `action` (`allow` | `approve` | `deny`). Same effect as tapping a
-  notification button; useful for building your own dashboard controls
-  (see below) or automations.
+  `action` (`allow` | `approve` | `guest` | `deny`). Same effect as
+  tapping a notification button; useful for building your own dashboard
+  controls (see below) or automations.
 - `wifi_watch.allowlist_remove` — takes a device off the allowlist; it'll
   get a fresh approval prompt next time it reconnects.
 - `wifi_watch.denied_remove` — unblocks a currently-blocked device.
@@ -185,6 +209,16 @@ views:
     - entity: sensor.wi_fi_watch_pending_approvals
       state_not: '0'
     card:
+      type: entities
+      title: Target device (optional)
+      show_header_toggle: false
+      entities:
+      - entity: select.wi_fi_watch_pending_device
+  - type: conditional
+    conditions:
+    - entity: sensor.wi_fi_watch_pending_approvals
+      state_not: '0'
+    card:
       type: horizontal-stack
       cards:
       - type: button
@@ -207,6 +241,16 @@ views:
           service: button.press
           target:
             entity_id: button.wi_fi_watch_approve_once
+      - type: button
+        entity: button.wi_fi_watch_trust_for_24h_guest
+        name: Trust 24h
+        icon: mdi:account-clock
+        show_state: false
+        tap_action:
+          action: call-service
+          service: button.press
+          target:
+            entity_id: button.wi_fi_watch_trust_for_24h_guest
       - type: button
         entity: button.wi_fi_watch_deny
         name: Deny (block)

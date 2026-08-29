@@ -34,9 +34,10 @@ test_notification:
 decide:
   name: Decide on a pending device
   description: >-
-    Allow, approve-once, or deny a pending device by its approval token -
-    the same action a notification button triggers. Use with the
-    pending_approvals sensor's tokens attribute to build dashboard buttons.
+    Allow, approve-once, trust for 24h (guest), or deny a pending device by
+    its approval token - the same action a notification button triggers.
+    Use with the pending_approvals sensor's tokens attribute to build
+    dashboard buttons.
   fields:
     token:
       required: true
@@ -50,4 +51,5 @@ decide:
           options:
             - allow
             - approve
+            - guest
             - deny

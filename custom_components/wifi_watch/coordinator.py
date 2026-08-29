@@ -120,9 +120,11 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
 
         needs_backfill = [mac for mac, v in merged["allowlist"].items() if v.get("first_seen") is None]
         if needs_backfill:
-            # One-time per device, not per poll - stat/alluser is a legacy
-            # call, only worth paying for once to fill in history for
-            # devices allowlisted before first_seen tracking existed.
+            # One call per restart (not per poll) for whichever devices
+            # still have no first_seen - typically only the ones from
+            # before this tracking existed, but if UniFi genuinely has no
+            # history for a device (or the earlier attempt failed) it's
+            # retried here again next restart rather than given up on.
             try:
                 first_seen_by_mac = await self._unifi.get_first_seen_by_mac()
             except UnifiApiError as err:
@@ -134,6 +136,10 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
                         merged["allowlist"][mac]["first_seen"] = fs
                 self._save_soon()
         self._first_run = merged["last_poll_epoch"] is None
+        # _burst_active itself isn't persisted, but recent_new_client_events
+        # is - without this, a restart mid-burst would forget an alert was
+        # already sent and re-alert on the very next detection.
+        self._burst_active = len(merged["recent_new_client_events"]) >= BURST_THRESHOLD
 
         from datetime import timedelta
 
@@ -173,18 +179,17 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         allowlist = self._state["allowlist"]
         seen_connections = self._state["seen_connections"]
 
-        # Guest-mode entries (expires set) that have run out get actually
-        # removed, not just marked - same cleanup async_allowlist_remove
-        # does, so an expired guest is indistinguishable from one manually
-        # removed. Note: this only affects the *next new session* - a
-        # guest still mid-session when their trust window closes isn't
-        # kicked off the network or re-prompted until they actually
-        # reconnect (is_new_session compares against the same
-        # connected_epoch either way).
+        # Guest-mode entries (expires set) that have run out get removed
+        # from the allowlist - but deliberately NOT from seen_connections/
+        # last_notify (unlike async_allowlist_remove's manual-removal path,
+        # which clears those on purpose to force an immediate re-prompt).
+        # Here the goal is the opposite: a guest still mid-session when
+        # their trust window closes shouldn't be disrupted - is_new_session
+        # keeps comparing against their still-current connected_epoch, so
+        # nothing re-fires (and nothing gets auto-blocked) until they
+        # actually disconnect and reconnect fresh.
         for mac in [m for m, v in allowlist.items() if v.get("expires") and v["expires"] < now]:
             del allowlist[mac]
-            seen_connections.pop(mac, None)
-            self._state["last_notify"].pop(mac, None)
             _LOGGER.info("guest trust expired: mac=%s", mac)
 
         for c in wireless:
@@ -319,7 +324,9 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         self._state["recent_new_client_events"] = logic.prune_list_by_age(
             self._state["recent_new_client_events"], now, BURST_WINDOW_SECONDS, "time"
         )
-        self._state["recent_new_client_events"].append({"mac": mac, "name": name, "time": now})
+        self._state["recent_new_client_events"].append(
+            {"mac": mac, "name": name, "time": now, "auto_block": auto_block, "blocked": blocked_ok}
+        )
 
         if len(self._state["recent_new_client_events"]) >= BURST_THRESHOLD:
             if not self._burst_active:

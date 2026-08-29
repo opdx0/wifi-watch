@@ -123,7 +123,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             )
 
     async def _notify_burst(events: list[dict]) -> None:
-        names = ", ".join(e["name"] for e in events)
+        # Per-device block status, same info the individual notification
+        # always carries - with auto_block on, every device here is
+        # already blocked (or failed to block) by the time this fires, and
+        # that's the one fact that decides whether to act now or later.
+        def _tag(e: dict) -> str:
+            if not e.get("auto_block"):
+                return ""
+            return " (blocked)" if e.get("blocked") else " (auto-block FAILED)"
+
+        names = ", ".join(f"{e['name']}{_tag(e)}" for e in events)
         message = (
             f"{len(events)} new devices joined within {events[-1]['time'] - events[0]['time']:.0f}s: {names}\n"
             "Review and approve/deny each one in Wi-Fi Watch (the Pending Device selector, "
