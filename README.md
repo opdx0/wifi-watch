@@ -95,12 +95,12 @@ to reauthenticate - click through it and re-enter the new password.
 
 ## Notify targets
 
-Every notification broadcasts automatically to `persistent_notification`
-plus every paired phone's `mobile_app_*` service - no configuration
-needed. Pair a phone with the HA Companion App after setup and it starts
-getting notified immediately; unpair it and it drops off on its own. To
-stop notifying a specific target without unpairing it, exclude it in
-Options below.
+Every notification creates a Home Assistant notification and broadcasts to
+every device with the Home Assistant Companion app installed - no
+configuration needed. Pair a phone with the Companion app after setup and
+it starts getting notified immediately; unpair it and it drops off on its
+own. To stop notifying a specific target without unpairing it, exclude it
+in Options below.
 
 ## Options
 
