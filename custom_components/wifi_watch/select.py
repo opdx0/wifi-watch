@@ -4,7 +4,6 @@ when more than one is waiting at once - ship with the integration, no
 dashboard required, and show up on the device's own page."""
 from __future__ import annotations
 
-import re
 import time
 
 from homeassistant.components.select import SelectEntity
@@ -13,19 +12,19 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from . import logic
 from .const import DOMAIN
 from .coordinator import WifiWatchCoordinator
 
 PLACEHOLDER = "(pick a device to remove)"
-# Some UniFi client names end in a trailing "-e8:f7"-style octet pair
-# (its own default-hostname convention for unnamed devices) - stripped so
-# the dropdown label reads as a clean name, matching the old template's
-# regex_replace behavior.
-_TRAILING_MAC_SUFFIX = re.compile(r" [0-9a-fA-F]{2}:[0-9a-fA-F]{2}$")
 
 
 def _label(name: str, mac: str) -> str:
-    return f"{_TRAILING_MAC_SUFFIX.sub('', name)} — {mac}"
+    # Names are already cleaned at capture time (coordinator.py), but this
+    # stays defensive for anything persisted before that existed and not
+    # yet touched by async_load's one-time cleanup pass (e.g. a name typed
+    # directly into storage by hand).
+    return f"{logic.clean_device_name(name)} — {mac}"
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:

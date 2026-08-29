@@ -5,7 +5,19 @@ logic can be unit tested with plain pytest, no hass fixture required.
 """
 from __future__ import annotations
 
+import re
 from datetime import datetime
+
+# UniFi's own default-hostname convention for an unnamed device is the
+# vendor/model name plus a trailing "-e8:f7"-style octet pair (its last two
+# MAC bytes) - stripped once here, at name capture, so every downstream
+# consumer (history, notifications, sensors, dropdowns) already sees the
+# clean name instead of each display site needing to know to strip it.
+_TRAILING_MAC_SUFFIX = re.compile(r" [0-9a-fA-F]{2}:[0-9a-fA-F]{2}$")
+
+
+def clean_device_name(name: str) -> str:
+    return _TRAILING_MAC_SUFFIX.sub("", name)
 
 
 def parse_connected_at(ts: str) -> float:

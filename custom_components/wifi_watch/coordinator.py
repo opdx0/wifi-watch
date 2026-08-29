@@ -116,6 +116,21 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
             mac: (v if isinstance(v, dict) else {"name": v, "first_seen": None, "last_seen": None})
             for mac, v in merged["allowlist"].items()
         }
+        # One-time cleanup of names captured before clean_device_name existed
+        # - new captures are already clean at the source (_handle_new_client/
+        # the first-run baseline branch), this just catches whatever's
+        # already sitting in storage from before that fix.
+        for v in merged["allowlist"].values():
+            v["name"] = logic.clean_device_name(v["name"])
+        for v in merged["denied"].values():
+            if v.get("name"):
+                v["name"] = logic.clean_device_name(v["name"])
+        merged["history"] = [
+            {**h, "name": logic.clean_device_name(h["name"])} if h.get("name") else h for h in merged["history"]
+        ]
+        for v in merged["tokens"].values():
+            if v.get("name"):
+                v["name"] = logic.clean_device_name(v["name"])
         self._state = merged
 
         needs_backfill = [mac for mac, v in merged["allowlist"].items() if v.get("first_seen") is None]
@@ -217,7 +232,10 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
                 # otherwise every one of these devices would look genuinely
                 # new the first time it reconnects (WiFi toggle, sleep/wake).
                 seen_connections[mac] = {"connected_epoch": connected_epoch, "last_seen": now}
-                allowlist[mac] = {"name": c.get("name") or "(unnamed)", "first_seen": None, "last_seen": now}
+                allowlist[mac] = {
+                    "name": logic.clean_device_name(c.get("name") or "(unnamed)"),
+                    "first_seen": None, "last_seen": now,
+                }
                 continue
 
             if not logic.is_new_session(seen_connections, mac, connected_epoch):
@@ -255,7 +273,7 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         return self._state
 
     async def _handle_new_client(self, client: dict, mac: str, now: float) -> None:
-        name = client.get("name") or "(unnamed)"
+        name = logic.clean_device_name(client.get("name") or "(unnamed)")
         ip = client.get("ipAddress", "?")
         randomized = logic.is_randomized_mac(mac)
         ssid, vendor = await self._unifi.get_client_essid_and_vendor(mac)
