@@ -1,6 +1,6 @@
 # wifi-watch
 
-Get notified when an unrecognized device joins your WiFi, and approve,
+Get notified when an unrecognized device joins your Wi-Fi, and approve,
 approve-once, or block it from an actionable notification (within Home
 Assistant Companion on your phone, or Home Assistant itself).
 
@@ -62,7 +62,7 @@ it clears on its own once polling recovers.
 - Home Assistant 2026.1.0 or newer.
 - Home Assistant reachable from wherever you'll be tapping notification
   actions from — see External reachability below if that's not just "at
-  home on your own WiFi" for you.
+  home on your own Wi-Fi" for you.
 
 ## Install
 
@@ -181,7 +181,7 @@ device page), this repo ships one.
 
 ```yaml
 views:
-- title: WiFi Approval
+- title: Wi-Fi Approval
   path: '0'
   cards:
   - type: conditional
@@ -189,10 +189,24 @@ views:
     - entity: sensor.wi_fi_watch_pending_approvals
       state_not: '0'
     card:
+      type: entities
+      title: Multiple pending? Pick one (optional)
+      show_header_toggle: false
+      entities:
+      - entity: select.wi_fi_watch_pending_device
+  - type: conditional
+    conditions:
+    - entity: sensor.wi_fi_watch_pending_approvals
+      state_not: '0'
+    card:
       type: markdown
       content: >-
-        {% set p = (state_attr('sensor.wi_fi_watch_pending_approvals', 'pending') or [{}])[0] %}
-        ## Pending WiFi client ({{ states('sensor.wi_fi_watch_pending_approvals') }} total)
+        {%- set sel = states('select.wi_fi_watch_pending_device') -%}
+        {%- set pending_list = state_attr('sensor.wi_fi_watch_pending_approvals', 'pending') or [] -%}
+        {%- set sel_mac = sel.rsplit(' — ', 1)[-1] if sel not in ['(none selected - buttons act on oldest)', 'unknown', 'unavailable'] else none -%}
+        {%- set matches = (pending_list | selectattr('mac', 'eq', sel_mac) | list) if sel_mac else [] -%}
+        {%- set p = (matches[0] if matches else (pending_list[0] if pending_list else {})) -%}
+        ## {{ 'Selected' if matches else 'Pending' }} Wi-Fi client ({{ states('sensor.wi_fi_watch_pending_approvals') }} total)
 
 
         **Name:** {{ p.get('name') }}
@@ -206,16 +220,6 @@ views:
     card:
       type: markdown
       content: '## ✅ No pending requests'
-  - type: conditional
-    conditions:
-    - entity: sensor.wi_fi_watch_pending_approvals
-      state_not: '0'
-    card:
-      type: entities
-      title: Target device (optional)
-      show_header_toggle: false
-      entities:
-      - entity: select.wi_fi_watch_pending_device
   - type: conditional
     conditions:
     - entity: sensor.wi_fi_watch_pending_approvals
@@ -316,7 +320,7 @@ reachable from outside your home network — that leg is Home Assistant
 pushing out to Apple/Google's push service regardless. Acting on it
 (tapping a notification action button) does: the tap has to reach back to
 Home Assistant's API, which only works from outside your LAN if Home
-Assistant is externally reachable somehow. At home on your own WiFi this
+Assistant is externally reachable somehow. At home on your own Wi-Fi this
 isn't a factor either way. Options, easiest first:
 
 - **[Nabu Casa Cloud](https://www.nabucasa.com/)** — paid subscription,

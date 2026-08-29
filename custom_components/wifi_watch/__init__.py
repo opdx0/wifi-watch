@@ -1,5 +1,5 @@
 """wifi-watch: get notified the moment an unrecognized device joins your
-WiFi, and approve or block it from an actionable phone notification.
+Wi-Fi, and approve or block it from an actionable phone notification.
 """
 from __future__ import annotations
 
@@ -104,7 +104,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 ("Approve once", f"{ACTION_PREFIX}APPROVE::{token}"),
                 ("Deny (block)", f"{ACTION_PREFIX}DENY::{token}"),
             ]
-        message = f"New WiFi client: {name}\nMAC: {mac}{tag}{vendorline}{ssidline}\nIP: {ip}\n{status}"
+        message = f"New Wi-Fi client: {name}\nMAC: {mac}{tag}{vendorline}{ssidline}\nIP: {ip}\n{status}"
 
         # Bare legacy notify service names (e.g. "mobile_app_iphone"),
         # called directly - NOT the generic entity-based notify.send_message,
@@ -116,7 +116,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                 "notify",
                 target,
                 {
-                    "title": "New WiFi Client",
+                    "title": "New Wi-Fi Client",
                     "message": message,
                     "data": {"actions": [{"action": a, "title": t} for t, a in actions], "push": {"sound": "default"}},
                 },
