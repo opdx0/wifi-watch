@@ -23,10 +23,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     coordinator: WifiWatchCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         [
-            WifiWatchDecideButton(coordinator, entry, "allow_save", "Allow + Save", "allow"),
+            WifiWatchDecideButton(coordinator, entry, "allow_save", "Approve + Save", "allow"),
+            WifiWatchDecideButton(coordinator, entry, "trust_24h", "Approve 24h", "guest"),
             WifiWatchDecideButton(coordinator, entry, "approve_once", "Approve Once", "approve"),
-            WifiWatchDecideButton(coordinator, entry, "trust_24h", "Trust For 24h (Guest)", "guest"),
-            WifiWatchDecideButton(coordinator, entry, "deny", "Deny", "deny"),
+            WifiWatchDecideButton(coordinator, entry, "deny", "Deny (Block)", "deny"),
         ]
     )
 

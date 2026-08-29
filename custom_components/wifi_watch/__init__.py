@@ -93,16 +93,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if auto_block:
             status = "BLOCKED - no network access until you act." if blocked_ok else "⚠️ Auto-block FAILED - device still has access, review needed."
             actions = [
-                ("Unblock + allow", f"{ACTION_PREFIX}ALLOW::{token}"),
-                ("Unblock once", f"{ACTION_PREFIX}APPROVE::{token}"),
-                ("Keep blocked", f"{ACTION_PREFIX}DENY::{token}"),
+                ("Unblock + Allow", f"{ACTION_PREFIX}ALLOW::{token}"),
+                ("Unblock Once", f"{ACTION_PREFIX}APPROVE::{token}"),
+                ("Keep Blocked", f"{ACTION_PREFIX}DENY::{token}"),
             ]
         else:
             status = "Has full network access (notify-only mode - nothing is blocked unless you tap Deny)."
             actions = [
-                ("Allow + save", f"{ACTION_PREFIX}ALLOW::{token}"),
-                ("Approve once", f"{ACTION_PREFIX}APPROVE::{token}"),
-                ("Deny (block)", f"{ACTION_PREFIX}DENY::{token}"),
+                ("Approve + Save", f"{ACTION_PREFIX}ALLOW::{token}"),
+                ("Approve Once", f"{ACTION_PREFIX}APPROVE::{token}"),
+                ("Deny (Block)", f"{ACTION_PREFIX}DENY::{token}"),
             ]
         message = f"New Wi-Fi client: {name}\nMAC: {mac}{tag}{vendorline}{ssidline}\nIP: {ip}\n{status}"
 

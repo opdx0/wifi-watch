@@ -24,7 +24,7 @@ def _label(name: str, mac: str) -> str:
     # stays defensive for anything persisted before that existed and not
     # yet touched by async_load's one-time cleanup pass (e.g. a name typed
     # directly into storage by hand).
-    return f"{logic.clean_device_name(name)} — {mac}"
+    return f"{logic.clean_device_name(name)} - {mac}"
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_entities: AddEntitiesCallback) -> None:
@@ -71,7 +71,7 @@ class _RemoveSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEntity):
     async def async_select_option(self, option: str) -> None:
         if option == PLACEHOLDER:
             return
-        mac = option.rsplit(" — ", 1)[-1]
+        mac = option.rsplit(" - ", 1)[-1]
         await self._remove(mac)
 
     async def _remove(self, mac: str) -> None:
@@ -98,8 +98,8 @@ PENDING_PLACEHOLDER = "(none selected - buttons act on oldest)"
 
 
 class WifiWatchPendingSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEntity):
-    """Points the three decide buttons (Allow+Save/Approve Once/Deny) at a
-    specific pending device when more than one is waiting - unlike the
+    """Points the four decide buttons (Approve + Save/Approve 24h/Approve
+    Once/Deny) at a specific pending device when more than one is waiting - unlike the
     remove-selects above, this one is sticky: picking an option stays
     selected until a button consumes it, it expires, or it's no longer
     pending, at which point it silently reverts to the placeholder and the
@@ -135,5 +135,5 @@ class WifiWatchPendingSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEnti
         if option == PENDING_PLACEHOLDER:
             await self.coordinator.async_set_selected_pending(None)
             return
-        mac = option.rsplit(" — ", 1)[-1]
+        mac = option.rsplit(" - ", 1)[-1]
         await self.coordinator.async_set_selected_pending(mac)
