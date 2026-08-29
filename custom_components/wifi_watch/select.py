@@ -121,7 +121,11 @@ class WifiWatchPendingSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEnti
 
     @property
     def options(self) -> list[str]:
-        labels = sorted((_label(v["name"], v["mac"]) for v in self._pending().values()), key=str.casefold)
+        # Oldest first, not alphabetical - matches the fallback behavior
+        # (buttons act on oldest when nothing's picked), so the top of the
+        # list is always the one that's already the default.
+        ordered = sorted(self._pending().values(), key=lambda v: v["created"])
+        labels = [_label(v["name"], v["mac"]) for v in ordered]
         return [PENDING_PLACEHOLDER] + labels
 
     @property
