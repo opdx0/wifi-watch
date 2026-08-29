@@ -23,10 +23,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
     coordinator: WifiWatchCoordinator = hass.data[DOMAIN][entry.entry_id]
     async_add_entities(
         [
-            WifiWatchDecideButton(coordinator, entry, "allow_save", "Approve + Save", "allow"),
-            WifiWatchDecideButton(coordinator, entry, "trust_24h", "Approve 24h", "guest"),
-            WifiWatchDecideButton(coordinator, entry, "approve_once", "Approve Once", "approve"),
-            WifiWatchDecideButton(coordinator, entry, "deny", "Deny (Block)", "deny"),
+            WifiWatchDecideButton(coordinator, entry, "allow_save", "allow_save", "Approve + Save", "allow"),
+            WifiWatchDecideButton(coordinator, entry, "trust_24h", "trust_for_24h_guest", "Approve 24h", "guest"),
+            WifiWatchDecideButton(coordinator, entry, "approve_once", "approve_once", "Approve Once", "approve"),
+            WifiWatchDecideButton(coordinator, entry, "deny", "deny", "Deny (Block)", "deny"),
         ]
     )
 
@@ -34,12 +34,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 class WifiWatchDecideButton(CoordinatorEntity[WifiWatchCoordinator], ButtonEntity):
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator, entry: ConfigEntry, key: str, name: str, action: str):
+    def __init__(self, coordinator, entry: ConfigEntry, key: str, object_id: str, name: str, action: str):
         super().__init__(coordinator)
         self._action = action
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_decide_{key}"
         self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+        # Entity_id is only derived from _attr_name at *first* registration -
+        # a renamed button keeps its old entity_id forever on upgrade, but a
+        # fresh install would slugify the *current* name into a different
+        # one. Pinning suggested_object_id keeps fresh and upgraded installs
+        # on the exact same entity_id the README's dashboard YAML hardcodes,
+        # independent of any future display-name-only rename.
+        self._attr_suggested_object_id = f"wi_fi_watch_{object_id}"
 
     def _oldest_pending_token(self) -> str | None:
         now = time.time()

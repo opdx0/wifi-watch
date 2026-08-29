@@ -230,7 +230,7 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
             if self._first_run:
                 # Trust whatever's already on the network at setup time -
                 # otherwise every one of these devices would look genuinely
-                # new the first time it reconnects (WiFi toggle, sleep/wake).
+                # new the first time it reconnects (Wi-Fi toggle, sleep/wake).
                 seen_connections[mac] = {"connected_epoch": connected_epoch, "last_seen": now}
                 allowlist[mac] = {
                     "name": logic.clean_device_name(c.get("name") or "(unnamed)"),

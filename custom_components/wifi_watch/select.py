@@ -41,12 +41,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry, async_add_e
 class _RemoveSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEntity):
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator, entry: ConfigEntry, key: str, name: str, state_key: str):
+    def __init__(self, coordinator, entry: ConfigEntry, key: str, object_id: str, name: str, state_key: str):
         super().__init__(coordinator)
         self._state_key = state_key
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+        # See button.py: pins entity_id independent of _attr_name so a fresh
+        # install matches the README's hardcoded dashboard YAML the same way
+        # an upgraded install does.
+        self._attr_suggested_object_id = f"wi_fi_watch_{object_id}"
 
     def _items(self) -> dict:
         return self.coordinator.data.get(self._state_key, {})
@@ -71,7 +75,10 @@ class _RemoveSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEntity):
     async def async_select_option(self, option: str) -> None:
         if option == PLACEHOLDER:
             return
-        mac = option.rsplit(" - ", 1)[-1]
+        # A MAC is always exactly 17 chars ("xx:xx:xx:xx:xx:xx") and always
+        # the label's trailing suffix (see _label) - slicing is immune to a
+        # device name containing " - ", unlike splitting on the separator.
+        mac = option[-17:]
         await self._remove(mac)
 
     async def _remove(self, mac: str) -> None:
@@ -80,7 +87,9 @@ class _RemoveSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEntity):
 
 class WifiWatchAllowlistSelect(_RemoveSelect):
     def __init__(self, coordinator, entry: ConfigEntry):
-        super().__init__(coordinator, entry, "allowlist_selection", "Remove From Allowlist", "allowlist")
+        super().__init__(
+            coordinator, entry, "allowlist_selection", "remove_from_allowlist", "Remove From Allowlist", "allowlist"
+        )
 
     async def _remove(self, mac: str) -> None:
         await self.coordinator.async_allowlist_remove(mac)
@@ -88,7 +97,14 @@ class WifiWatchAllowlistSelect(_RemoveSelect):
 
 class WifiWatchDeniedSelect(_RemoveSelect):
     def __init__(self, coordinator, entry: ConfigEntry):
-        super().__init__(coordinator, entry, "denied_selection", "Remove From Currently Blocked", "denied")
+        super().__init__(
+            coordinator,
+            entry,
+            "denied_selection",
+            "remove_from_currently_blocked",
+            "Remove From Currently Blocked",
+            "denied",
+        )
 
     async def _remove(self, mac: str) -> None:
         await self.coordinator.async_denied_remove(mac, False)
@@ -113,6 +129,7 @@ class WifiWatchPendingSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEnti
         self._attr_name = "Pending Device"
         self._attr_unique_id = f"{entry.entry_id}_pending_selection"
         self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
+        self._attr_suggested_object_id = "wi_fi_watch_pending_device"
 
     def _pending(self) -> dict:
         now = time.time()
@@ -139,5 +156,5 @@ class WifiWatchPendingSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEnti
         if option == PENDING_PLACEHOLDER:
             await self.coordinator.async_set_selected_pending(None)
             return
-        mac = option.rsplit(" - ", 1)[-1]
+        mac = option[-17:]
         await self.coordinator.async_set_selected_pending(mac)

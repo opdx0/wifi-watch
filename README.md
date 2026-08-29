@@ -196,7 +196,7 @@ views:
         content: >-
           {%- set sel = states('select.wi_fi_watch_pending_device') -%}
           {%- set pending_list = state_attr('sensor.wi_fi_watch_pending_approvals', 'pending') or [] -%}
-          {%- set sel_mac = sel.rsplit(' - ', 1)[-1] if sel not in ['(none selected - buttons act on oldest)', 'unknown', 'unavailable'] else none -%}
+          {%- set sel_mac = sel[-17:] if sel not in ['(none selected - buttons act on oldest)', 'unknown', 'unavailable'] else none -%}
           {%- set matches = (pending_list | selectattr('mac', 'eq', sel_mac) | list) if sel_mac else [] -%}
           {%- set p = (matches[0] if matches else (pending_list[0] if pending_list else {})) -%}
           ## {{ 'Selected' if matches else 'Pending' }} Wi-Fi client ({{ states('sensor.wi_fi_watch_pending_approvals') }} total)
