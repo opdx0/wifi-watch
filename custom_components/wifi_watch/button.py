@@ -40,13 +40,17 @@ class WifiWatchDecideButton(CoordinatorEntity[WifiWatchCoordinator], ButtonEntit
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_decide_{key}"
         self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
-        # Entity_id is only derived from _attr_name at *first* registration -
-        # a renamed button keeps its old entity_id forever on upgrade, but a
+        self._object_id = object_id
+
+    @property
+    def suggested_object_id(self) -> str:
+        # Entity_id is only derived from this at *first* registration - a
+        # renamed button keeps its old entity_id forever on upgrade, but a
         # fresh install would slugify the *current* name into a different
-        # one. Pinning suggested_object_id keeps fresh and upgraded installs
-        # on the exact same entity_id the README's dashboard YAML hardcodes,
+        # one. Overriding this keeps fresh and upgraded installs on the
+        # exact same entity_id the README's dashboard YAML hardcodes,
         # independent of any future display-name-only rename.
-        self._attr_suggested_object_id = f"wi_fi_watch_{object_id}"
+        return self._object_id
 
     def _oldest_pending_token(self) -> str | None:
         now = time.time()

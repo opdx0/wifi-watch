@@ -47,10 +47,14 @@ class _RemoveSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEntity):
         self._attr_name = name
         self._attr_unique_id = f"{entry.entry_id}_{key}"
         self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
-        # See button.py: pins entity_id independent of _attr_name so a fresh
-        # install matches the README's hardcoded dashboard YAML the same way
-        # an upgraded install does.
-        self._attr_suggested_object_id = f"wi_fi_watch_{object_id}"
+        self._object_id = object_id
+
+    @property
+    def suggested_object_id(self) -> str:
+        # See button.py: overriding this pins entity_id independent of
+        # _attr_name so a fresh install matches the README's hardcoded
+        # dashboard YAML the same way an upgraded install does.
+        return self._object_id
 
     def _items(self) -> dict:
         return self.coordinator.data.get(self._state_key, {})
@@ -129,7 +133,10 @@ class WifiWatchPendingSelect(CoordinatorEntity[WifiWatchCoordinator], SelectEnti
         self._attr_name = "Pending Device"
         self._attr_unique_id = f"{entry.entry_id}_pending_selection"
         self._attr_device_info = {"identifiers": {(DOMAIN, entry.entry_id)}}
-        self._attr_suggested_object_id = "wi_fi_watch_pending_device"
+
+    @property
+    def suggested_object_id(self) -> str:
+        return "pending_device"
 
     def _pending(self) -> dict:
         now = time.time()
