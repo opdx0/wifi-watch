@@ -95,7 +95,7 @@ to reauthenticate - click through it and re-enter the new password.
 
 ## Notify targets
 
-Every notification creates a Home Assistant notification and broadcasts to
+Every alert creates a Home Assistant notification and broadcasts to
 every device with the Home Assistant Companion app installed. Pair a phone
 with the Companion app after setup and it starts getting notified
 immediately; unpair it and it drops off on its own. To stop notifying a
