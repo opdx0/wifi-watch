@@ -57,7 +57,7 @@ SERVICE_DECIDE = "decide"
 
 MAC_SCHEMA = vol.Schema({vol.Required("mac"): str})
 DENIED_REMOVE_SCHEMA = vol.Schema({vol.Required("mac"): str, vol.Optional("allowlist", default=False): bool})
-DECIDE_SCHEMA = vol.Schema({vol.Required("token"): str, vol.Required("action"): vol.In(["allow", "approve", "deny"])})
+DECIDE_SCHEMA = vol.Schema({vol.Required("token"): str, vol.Required("action"): vol.In(["allow", "approve", "guest", "deny"])})
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

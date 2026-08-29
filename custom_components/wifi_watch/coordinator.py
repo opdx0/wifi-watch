@@ -41,6 +41,11 @@ _LOGGER = logging.getLogger(__name__)
 # silent unavailability" that happened for real before this existed.
 UPDATE_FAILING_THRESHOLD_SECONDS = 60
 
+# Fixed, not an option - "trust for 24h" is the whole point of guest mode;
+# making it configurable would just be a slower way to reach for auto_block
+# or a permanent Allow + Save instead.
+GUEST_TRUST_SECONDS = 24 * 60 * 60
+
 
 def _default_state() -> dict:
     return {
@@ -154,6 +159,20 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         now = time.time()
         allowlist = self._state["allowlist"]
         seen_connections = self._state["seen_connections"]
+
+        # Guest-mode entries (expires set) that have run out get actually
+        # removed, not just marked - same cleanup async_allowlist_remove
+        # does, so an expired guest is indistinguishable from one manually
+        # removed. Note: this only affects the *next new session* - a
+        # guest still mid-session when their trust window closes isn't
+        # kicked off the network or re-prompted until they actually
+        # reconnect (is_new_session compares against the same
+        # connected_epoch either way).
+        for mac in [m for m, v in allowlist.items() if v.get("expires") and v["expires"] < now]:
+            del allowlist[mac]
+            seen_connections.pop(mac, None)
+            self._state["last_notify"].pop(mac, None)
+            _LOGGER.info("guest trust expired: mac=%s", mac)
 
         for c in wireless:
             mac = c.get("macAddress", "").lower()
@@ -308,17 +327,18 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
         self.async_set_updated_data(self._state)
 
     async def async_handle_action(self, token: str, action: str) -> None:
-        """action: "allow" | "approve" | "deny". Mirrors wifi_watch.py's
-        /action endpoint handler - only consumes the token once the actual
-        UniFi call succeeds, so a failed unblock/block leaves it usable for
-        retry instead of silently stranding the device."""
+        """action: "allow" | "approve" | "guest" | "deny". Mirrors
+        wifi_watch.py's /action endpoint handler - only consumes the token
+        once the actual UniFi call succeeds, so a failed unblock/block
+        leaves it usable for retry instead of silently stranding the
+        device."""
         entry = self._state["tokens"].get(token)
         if not entry or entry.get("consumed") or entry["expires"] < time.time():
             _LOGGER.warning("action=%s for invalid/expired/consumed token", action)
             return
 
         now = time.time()
-        if action in ("allow", "approve"):
+        if action in ("allow", "approve", "guest"):
             ok = True
             if entry.get("blocked"):
                 try:
@@ -335,6 +355,14 @@ class WifiWatchCoordinator(DataUpdateCoordinator[dict]):
                 hist_action = "unblocked + allowed" if entry.get("blocked") else "allowed"
                 _LOGGER.info(
                     "ALLOWLISTED mac=%s name=%s unblocked=%s", entry["mac"], entry["name"], entry.get("blocked", False)
+                )
+            elif action == "guest":
+                self._state["allowlist"][entry["mac"]] = {
+                    "name": entry["name"], "first_seen": None, "last_seen": now, "expires": now + GUEST_TRUST_SECONDS,
+                }
+                hist_action = "unblocked + trusted for 24h" if entry.get("blocked") else "trusted for 24h"
+                _LOGGER.info(
+                    "GUEST-TRUSTED mac=%s name=%s unblocked=%s", entry["mac"], entry["name"], entry.get("blocked", False)
                 )
             else:
                 hist_action = "unblocked once" if entry.get("blocked") else "approved once"
