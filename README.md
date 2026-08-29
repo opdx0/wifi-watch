@@ -83,7 +83,7 @@ The config flow is two short steps:
 
 1. **Connection**: controller host/IP, integration API key, dedicated
    account username/password (see Requirements above for both
-   credentials). Validated before continuing.
+   credentials).
 2. **Site**: skipped automatically if your controller only has one site;
    otherwise pick it from a dropdown, no UUID-hunting required.
 
